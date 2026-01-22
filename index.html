@@ -1,859 +1,292 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>입시 데이터 분석 대시보드</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>학교 자체 입시 데이터 분석 대시보드</title>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-  <!-- SheetJS (xlsx) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <style>
-    :root{
-      --bg:#f6f7fb;
-      --card:#fff;
-      --ink:#0f172a;
-      --muted:#64748b;
-      --line:#e2e8f0;
-      --brand:#2563eb;
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --bad:#dc2626;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;background:var(--bg);color:var(--ink)}
-    header{padding:22px 18px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:10}
-    header h1{margin:0;font-size:20px;letter-spacing:-0.3px}
-    header p{margin:6px 0 0;color:var(--muted);font-size:13px}
-    .wrap{max-width:1200px;margin:0 auto;padding:18px}
-    .grid{display:grid;gap:12px}
-    .grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    @media (max-width: 980px){
-      .grid.cols-4{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .grid.cols-3{grid-template-columns:repeat(1,minmax(0,1fr))}
-      .grid.cols-2{grid-template-columns:repeat(1,minmax(0,1fr))}
-    }
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 0 rgba(15,23,42,.04)}
-    .card h2{margin:0 0 10px;font-size:15px}
-    .muted{color:var(--muted)}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{
-      display:inline-flex;gap:8px;align-items:center;justify-content:center;
-      background:var(--brand);color:#fff;border:0;border-radius:10px;
-      padding:10px 12px;font-weight:700;cursor:pointer
-    }
-    .btn.secondary{background:#0f172a}
-    .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
-    input[type="file"]{display:none}
-    label.file{
-      display:inline-flex;gap:8px;align-items:center;justify-content:center;
-      background:var(--brand);color:#fff;border-radius:10px;padding:10px 12px;
-      font-weight:700;cursor:pointer
-    }
-    select, input[type="text"], input[type="number"]{
-      padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;
-      min-width:160px
-    }
-    .kpi{display:flex;flex-direction:column;gap:6px}
-    .kpi .v{font-size:22px;font-weight:900}
-    .kpi .l{font-size:12px;color:var(--muted)}
-    .tag{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)}
-    .hint{font-size:12px;color:var(--muted);line-height:1.5}
-    .split{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-    .small{font-size:12px}
-    .hr{height:1px;background:var(--line);margin:10px 0}
-    canvas{width:100% !important;height:320px !important}
-    .tableWrap{overflow:auto;border-radius:12px;border:1px solid var(--line)}
-    table{width:100%;border-collapse:collapse;background:#fff}
-    th,td{padding:9px 10px;border-bottom:1px solid var(--line);font-size:12.5px;white-space:nowrap}
-    th{position:sticky;top:0;background:#f8fafc;text-align:left}
-    tr:hover td{background:#f8fafc}
-    .pill{
-      display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 8px;
-      font-size:12px;font-weight:700;border:1px solid var(--line);background:#fff
-    }
-    .pill.ok{color:var(--ok)}
-    .pill.bad{color:var(--bad)}
-    .pill.warn{color:var(--warn)}
-    .clickNote{font-size:12px;color:var(--muted)}
-    .warnbox{
-      background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;
-      padding:10px;border-radius:12px;font-size:12px;line-height:1.5
-    }
-  </style>
+<style>
+:root{
+  --bg:#0f172a;
+  --panel:#111827;
+  --card:#1f2933;
+  --ink:#e5e7eb;
+  --muted:#9ca3af;
+  --accent:#38bdf8;
+  --accent2:#22c55e;
+  --accent3:#f59e0b;
+  --danger:#ef4444;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans KR",system-ui;background:#020617;color:var(--ink)}
+header{
+  background:linear-gradient(135deg,#2563eb,#22c55e);
+  padding:22px;
+  text-align:center;
+}
+header h1{
+  margin:0;
+  font-size:26px;
+  font-weight:900;
+  letter-spacing:-0.5px;
+}
+header p{
+  margin:6px 0 0;
+  font-size:13px;
+  opacity:.9;
+}
+.wrap{max-width:1280px;margin:auto;padding:14px}
+.grid{display:grid;gap:14px}
+.grid.c2{grid-template-columns:repeat(2,1fr)}
+.grid.c3{grid-template-columns:repeat(3,1fr)}
+.grid.c4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){
+  .grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr}
+}
+.card{
+  background:var(--card);
+  border-radius:16px;
+  padding:14px;
+}
+.card h2{
+  margin:0 0 8px;
+  font-size:15px;
+  color:#e0f2fe;
+}
+button,label{
+  background:#2563eb;
+  color:#fff;
+  border:0;
+  padding:9px 14px;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+input[type=file]{display:none}
+select{
+  background:#020617;
+  color:#e5e7eb;
+  border:1px solid #334155;
+  border-radius:8px;
+  padding:6px;
+}
+canvas{height:320px!important;width:100%!important}
+.small{font-size:12px;color:var(--muted)}
+</style>
 </head>
+
 <body>
+
 <header>
-  <div class="wrap">
-    <h1>입시 데이터 분석 대시보드</h1>
-    <p>엑셀 업로드 → 브라우저에서만 분석합니다. <b>서버 저장 없음</b> (GitHub Pages 정적 웹)</p>
-  </div>
+  <h1>학교 자체 입시 데이터 분석 대시보드</h1>
+  <p>엑셀 업로드 · 서버 저장 없음 · 합격/충원/불합격 통합 분석</p>
 </header>
 
-<main class="wrap grid" style="gap:14px">
-  <!-- Upload + Filters -->
-  <section class="card">
-    <div class="split">
-      <div>
-        <h2>엑셀 업로드</h2>
-        <div class="hint">
-          • 템플릿(시트 1개) 업로드를 기준으로 동작합니다.<br/>
-          • 열 이름은 예시로 주신 것(고교명, 학생번호, 학년도, 지역, 대학명, 전형유형, 환산등급, 합격결과 등)을 자동 인식합니다.
-        </div>
-      </div>
-      <div class="row">
-        <input id="file" type="file" accept=".xlsx,.xls" />
-        <label class="file" for="file">엑셀 파일 선택</label>
-        <button class="btn ghost" id="clearBtn">초기화</button>
-      </div>
-    </div>
+<div class="wrap grid">
 
-    <div class="hr"></div>
+<!-- 업로드 -->
+<div class="card">
+  <label for="file">📁 엑셀 파일 업로드</label>
+  <input id="file" type="file" accept=".xlsx,.xls">
+  <p class="small">※ U열(합격결과) 기준 분석 / 충원합격 포함</p>
+</div>
 
-    <div class="row">
-      <span class="tag">필터</span>
-      <select id="filterYear"><option value="">학년도(전체)</option></select>
-      <select id="filterSchool"><option value="">고교명(전체)</option></select>
-      <select id="filterRegion"><option value="">지역(전체)</option></select>
-      <select id="filterUnivType"><option value="">대학유형(전체)</option></select>
-      <select id="filterRound"><option value="">모집시기(전체)</option></select>
-      <select id="filterAdType"><option value="">전형유형(전체)</option></select>
+<!-- 필터 -->
+<div class="card grid c3">
+  <div>
+    <label>지역</label><br>
+    <select id="region"></select>
+  </div>
+  <div>
+    <label>전형유형</label><br>
+    <select id="adType"></select>
+  </div>
+  <div>
+    <label>등급 기준</label><br>
+    <select id="gradeBase">
+      <option value="환산등급">환산등급</option>
+      <option value="전교과">전교과</option>
+      <option value="국영수">국영수</option>
+      <option value="국영수사">국영수사</option>
+      <option value="국영수과">국영수과</option>
+    </select>
+  </div>
+</div>
 
-      <select id="gradeBandBy">
-        <option value="환산등급">등급대 기준: 환산등급</option>
-        <option value="전교과">등급대 기준: 전교과</option>
-        <option value="국영수">등급대 기준: 국영수</option>
-        <option value="국영수사">등급대 기준: 국영수사</option>
-        <option value="국영수과">등급대 기준: 국영수과</option>
-      </select>
+<!-- 합격 결과 비율 -->
+<div class="card">
+  <h2>합격 / 충원합격 / 불합격 비율</h2>
+  <canvas id="resultPie"></canvas>
+</div>
 
-      <input id="searchText" type="text" placeholder="사례 검색 (대학명/모집단위/전형 등)" style="min-width:260px" />
-      <button class="btn secondary" id="exportBtn">사례 CSV 저장</button>
-    </div>
+<!-- 지역별 합격률 -->
+<div class="card">
+  <h2>지역별 합격률 (라인)</h2>
+  <canvas id="regionLine"></canvas>
+</div>
 
-    <div id="warn" class="warnbox" style="display:none;margin-top:10px"></div>
-  </section>
+<!-- 지역 선택 → 대학 TOP10 -->
+<div class="card">
+  <h2>지역 내 대학별 합격률 TOP10</h2>
+  <canvas id="regionUnivTop"></canvas>
+</div>
 
-  <!-- KPIs -->
-  <section class="grid cols-4">
-    <div class="card kpi">
-      <div class="l">분석 대상 건수</div>
-      <div class="v" id="kpiCount">-</div>
-      <div class="l muted">필터 적용 후 행 수</div>
-    </div>
-    <div class="card kpi">
-      <div class="l">합격률 (합격+충원합격)</div>
-      <div class="v" id="kpiAcc">-</div>
-      <div class="l muted">합격결과가 비어있지 않은 행 기준</div>
-    </div>
-    <div class="card kpi">
-      <div class="l">등록률</div>
-      <div class="v" id="kpiReg">-</div>
-      <div class="l muted">등록여부 = Y 비율</div>
-    </div>
-    <div class="card kpi">
-      <div class="l">평균 등급</div>
-      <div class="v" id="kpiGrade">-</div>
-      <div class="l muted"><span id="kpiGradeLabel">환산등급</span> 평균</div>
-    </div>
-  </section>
+<!-- 불합격 사유 -->
+<div class="card">
+  <h2>불합격 사유 분석</h2>
+  <canvas id="failReasonChart"></canvas>
+</div>
 
-  <!-- Charts -->
-  <section class="grid cols-2">
-    <div class="card">
-      <div class="split">
-        <h2>지역별 합격률</h2>
-        <div class="clickNote">막대를 클릭하면 아래 사례가 해당 조건으로 필터링됩니다.</div>
-      </div>
-      <canvas id="chartRegion"></canvas>
-    </div>
+<!-- 후보순위 -->
+<div class="card">
+  <h2>후보순위 분포 (추합 흐름)</h2>
+  <canvas id="waitChart"></canvas>
+</div>
 
-    <div class="card">
-      <div class="split">
-        <h2>전형유형별 합격률</h2>
-        <div class="clickNote">막대 클릭 → 사례 필터</div>
-      </div>
-      <canvas id="chartAdType"></canvas>
-    </div>
-  </section>
+<!-- 등급 분포 -->
+<div class="card">
+  <h2>합격자 등급 분포 (박스플롯 느낌)</h2>
+  <canvas id="gradeDist"></canvas>
+</div>
 
-  <section class="grid cols-2">
-    <div class="card">
-      <div class="split">
-        <h2>등급대별 합격률</h2>
-        <div class="clickNote">등급대 기준은 상단에서 변경 가능</div>
-      </div>
-      <canvas id="chartGradeBand"></canvas>
-    </div>
-
-    <div class="card">
-      <div class="split">
-        <h2>대학명별 합격률 (상위 15개)</h2>
-        <div class="clickNote">대학명 클릭 → 사례 필터</div>
-      </div>
-      <canvas id="chartUniv"></canvas>
-    </div>
-  </section>
-
-  <!-- Cases table -->
-  <section class="card">
-    <div class="split">
-      <div>
-        <h2>사례 목록</h2>
-        <div class="hint">필터/차트 클릭/검색어에 따라 아래 행이 바뀝니다. (개인정보 노출 주의: 배포 시 내부 공유만 권장)</div>
-      </div>
-      <div class="row">
-        <span class="tag" id="activeChip">차트 선택 없음</span>
-        <button class="btn ghost" id="clearChartFilter">차트 필터 해제</button>
-      </div>
-    </div>
-
-    <div class="tableWrap" style="margin-top:10px; max-height:420px">
-      <table id="caseTable">
-        <thead>
-          <tr>
-            <th>학년도</th>
-            <th>고교명</th>
-            <th>지역</th>
-            <th>대학명</th>
-            <th>모집시기</th>
-            <th>전형유형</th>
-            <th>전형</th>
-            <th>세부유형</th>
-            <th>모집단위</th>
-            <th>최저학력기준</th>
-            <th>등급</th>
-            <th>환산점수</th>
-            <th>합격결과</th>
-            <th>불합격사유</th>
-            <th>후보순위</th>
-            <th>등록여부</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-</main>
+</div>
 
 <script>
-/** =======================
- *  0) 컬럼명 자동 매핑
- *  ======================= */
-const COL = {
-  school: "고교명",
-  studentId: "학생번호",
-  year: "학년도",
-  univType: "대학유형",
-  region: "지역",
-  univ: "대학명",
-  round: "모집시기",
-  adType: "전형유형",
-  adName: "전형",
-  subType: "세부유형",
-  major: "모집단위",
-  minReq: "최저학력기준",
-  convScore: "환산점수",      // 중복 가능
-  convGrade: "환산등급",      // 중복 가능
-  result: "합격결과",         // 중복 가능
-  failReason: "불합격사유",
-  waitNo: "후보순위",
-  registered: "등록여부"
-};
+let rows=[];
+const $=id=>document.getElementById(id);
 
-// 엑셀에 중복 열(환산점수, 환산등급, 합격결과)이 있을 수 있어
-// 실제 파싱된 객체에서 "첫 번째로 존재하는 키"를 안전하게 찾는 헬퍼
-function pickKey(obj, baseName){
-  const keys = Object.keys(obj);
-  // exact match 우선
-  if (keys.includes(baseName)) return baseName;
-  // baseName으로 시작하는 키(예: "환산등급 "처럼 공백 포함/중복 처리) 탐색
-  const k = keys.find(x => x.replace(/\s+/g,'') === baseName.replace(/\s+/g,''));
-  if (k) return k;
-  const k2 = keys.find(x => x.startsWith(baseName));
-  return k2 || baseName; // fallback
-}
-
-function normStr(v){ return (v ?? "").toString().trim(); }
-function toNum(v){
-  const s = normStr(v).replace(/,/g,'');
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
-}
-
-function isAccepted(resultStr){
-  const r = normStr(resultStr);
-  return (r === "합격" || r === "충원합격");
-}
-function isRejected(resultStr){
-  const r = normStr(resultStr);
-  return (r === "불합격");
-}
-
-/** =======================
- *  1) 상태
- *  ======================= */
-let rawRows = [];          // 전체
-let viewRows = [];         // 필터 적용 후
-let chartFilter = null;    // {type:'region'|'adType'|'univ'|'gradeBand', value:'...'}
-let charts = {};
-
-/** =======================
- *  2) DOM
- *  ======================= */
-const elFile = document.getElementById('file');
-const elWarn = document.getElementById('warn');
-
-const elYear = document.getElementById('filterYear');
-const elSchool = document.getElementById('filterSchool');
-const elRegion = document.getElementById('filterRegion');
-const elUnivType = document.getElementById('filterUnivType');
-const elRound = document.getElementById('filterRound');
-const elAdType = document.getElementById('filterAdType');
-const elGradeBandBy = document.getElementById('gradeBandBy');
-const elSearch = document.getElementById('searchText');
-
-const elKpiCount = document.getElementById('kpiCount');
-const elKpiAcc = document.getElementById('kpiAcc');
-const elKpiReg = document.getElementById('kpiReg');
-const elKpiGrade = document.getElementById('kpiGrade');
-const elKpiGradeLabel = document.getElementById('kpiGradeLabel');
-
-const elActiveChip = document.getElementById('activeChip');
-const elTbody = document.querySelector('#caseTable tbody');
-
-document.getElementById('clearBtn').addEventListener('click', () => resetAll());
-document.getElementById('clearChartFilter').addEventListener('click', () => {
-  chartFilter = null;
-  elActiveChip.textContent = '차트 선택 없음';
-  refresh();
-});
-document.getElementById('exportBtn').addEventListener('click', () => exportCSV());
-
-[elYear, elSchool, elRegion, elUnivType, elRound, elAdType, elGradeBandBy].forEach(x => x.addEventListener('change', refresh));
-elSearch.addEventListener('input', () => refresh());
-
-elFile.addEventListener('change', async (e) => {
-  const f = e.target.files?.[0];
-  if (!f) return;
-  try{
-    await loadExcel(f);
-  }catch(err){
-    showWarn('엑셀을 읽는 중 오류가 발생했습니다: ' + (err?.message || err));
-    console.error(err);
-  }
+$("file").addEventListener("change",async e=>{
+  const f=e.target.files[0];
+  const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+  rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+  initFilters();
+  drawAll();
 });
 
-/** =======================
- *  3) 엑셀 로드
- *  ======================= */
-async function loadExcel(file){
-  showWarn('');
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, {type:'array'});
-  const sheetName = wb.SheetNames[0]; // 템플릿은 1개 시트
-  const ws = wb.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json(ws, {defval:""});
-
-  if (!rows.length){
-    showWarn('시트에 데이터가 없습니다.');
-    return;
-  }
-
-  // 필수 컬럼 존재 체크 (느슨하게)
-  const sample = rows[0];
-  const required = [COL.year, COL.school, COL.region, COL.univ, COL.round, COL.adType, COL.major, COL.result];
-  const missing = required.filter(r => !Object.keys(sample).some(k => k.replace(/\s+/g,'') === r.replace(/\s+/g,'')));
-
-  if (missing.length){
-    showWarn('필수 열이 일부 보이지 않습니다: ' + missing.join(', ') + '  (열 이름이 정확한지 확인해주세요)');
-  }
-
-  rawRows = rows;
-  chartFilter = null;
-  elActiveChip.textContent = '차트 선택 없음';
-
-  buildFilterOptions();
-  initCharts();
-  refresh();
+function initFilters(){
+  fill("region",[...new Set(rows.map(r=>r["지역"]).filter(Boolean))]);
+  fill("adType",[...new Set(rows.map(r=>r["전형유형"]).filter(Boolean))]);
 }
-
-/** =======================
- *  4) 필터 옵션 구성
- *  ======================= */
-function uniqSorted(arr){
-  const set = new Set(arr.filter(x => normStr(x) !== ""));
-  return Array.from(set).sort((a,b)=> a.localeCompare(b,'ko'));
-}
-
-function fillSelect(selectEl, items, placeholder){
-  const cur = selectEl.value;
-  selectEl.innerHTML = '';
-  const opt0 = document.createElement('option');
-  opt0.value = '';
-  opt0.textContent = placeholder;
-  selectEl.appendChild(opt0);
-  items.forEach(v=>{
-    const opt = document.createElement('option');
-    opt.value = v;
-    opt.textContent = v;
-    selectEl.appendChild(opt);
+function fill(id,list){
+  const s=$(id);
+  s.innerHTML="<option value=''>전체</option>";
+  list.forEach(v=>{
+    s.innerHTML+=`<option>${v}</option>`;
   });
-  // 이전 선택 유지 시도
-  if ([...selectEl.options].some(o=>o.value===cur)) selectEl.value = cur;
 }
 
-function buildFilterOptions(){
-  const yearK = pickKey(rawRows[0], COL.year);
-  const schoolK = pickKey(rawRows[0], COL.school);
-  const regionK = pickKey(rawRows[0], COL.region);
-  const univTypeK = pickKey(rawRows[0], COL.univType);
-  const roundK = pickKey(rawRows[0], COL.round);
-  const adTypeK = pickKey(rawRows[0], COL.adType);
+["region","adType","gradeBase"].forEach(id=>{
+  $(id).addEventListener("change",drawAll);
+});
 
-  fillSelect(elYear, uniqSorted(rawRows.map(r=>r[yearK])), '학년도(전체)');
-  fillSelect(elSchool, uniqSorted(rawRows.map(r=>r[schoolK])), '고교명(전체)');
-  fillSelect(elRegion, uniqSorted(rawRows.map(r=>r[regionK])), '지역(전체)');
-  fillSelect(elUnivType, uniqSorted(rawRows.map(r=>r[univTypeK])), '대학유형(전체)');
-  fillSelect(elRound, uniqSorted(rawRows.map(r=>r[roundK])), '모집시기(전체)');
-  fillSelect(elAdType, uniqSorted(rawRows.map(r=>r[adTypeK])), '전형유형(전체)');
-}
-
-/** =======================
- *  5) 집계 유틸
- *  ======================= */
-function applyBaseFilters(rows){
-  if (!rows.length) return [];
-  const sample = rows[0];
-
-  const yearK = pickKey(sample, COL.year);
-  const schoolK = pickKey(sample, COL.school);
-  const regionK = pickKey(sample, COL.region);
-  const univTypeK = pickKey(sample, COL.univType);
-  const roundK = pickKey(sample, COL.round);
-  const adTypeK = pickKey(sample, COL.adType);
-  const resultK = pickKey(sample, COL.result);
-
-  const search = normStr(elSearch.value).toLowerCase();
-
+function filtered(){
   return rows.filter(r=>{
-    if (elYear.value && normStr(r[yearK]) !== elYear.value) return false;
-    if (elSchool.value && normStr(r[schoolK]) !== elSchool.value) return false;
-    if (elRegion.value && normStr(r[regionK]) !== elRegion.value) return false;
-    if (elUnivType.value && normStr(r[univTypeK]) !== elUnivType.value) return false;
-    if (elRound.value && normStr(r[roundK]) !== elRound.value) return false;
-    if (elAdType.value && normStr(r[adTypeK]) !== elAdType.value) return false;
-
-    // 결과 없는 행은 분석에서는 제외(표시는 가능하게 남겨도 되지만, 현재는 포함)
-    // 여기서는 포함시키되, 합격률 계산에서만 제외 처리함.
-    // 검색
-    if (search){
-      const blob = Object.values(r).join(' ').toLowerCase();
-      if (!blob.includes(search)) return false;
-    }
+    if($("region").value && r["지역"]!==$("region").value) return false;
+    if($("adType").value && r["전형유형"]!==$("adType").value) return false;
     return true;
   });
 }
 
-function applyChartFilter(rows){
-  if (!chartFilter) return rows;
-  if (!rows.length) return rows;
-
-  const sample = rows[0];
-  const regionK = pickKey(sample, COL.region);
-  const adTypeK = pickKey(sample, COL.adType);
-  const univK = pickKey(sample, COL.univ);
-
-  if (chartFilter.type === 'region'){
-    return rows.filter(r=> normStr(r[regionK]) === chartFilter.value);
-  }
-  if (chartFilter.type === 'adType'){
-    return rows.filter(r=> normStr(r[adTypeK]) === chartFilter.value);
-  }
-  if (chartFilter.type === 'univ'){
-    return rows.filter(r=> normStr(r[univK]) === chartFilter.value);
-  }
-  if (chartFilter.type === 'gradeBand'){
-    // gradeBand는 계산값이므로, 재계산해서 비교
-    return rows.filter(r => makeGradeBand(r, elGradeBandBy.value) === chartFilter.value);
-  }
-  return rows;
+function drawAll(){
+  const data=filtered();
+  drawResultPie(data);
+  drawRegionLine(data);
+  drawRegionUnivTop(data);
+  drawFailReason(data);
+  drawWait(data);
+  drawGradeDist(data);
 }
 
-function groupAccRate(rows, keyFn){
-  // 합격결과가 비어있지 않은 것만 "분모"로 삼기
-  if (!rows.length) return [];
-  const sample = rows[0];
-  const resultK = pickKey(sample, COL.result);
+function isPass(r){return r==="합격"||r==="충원합격";}
 
-  const m = new Map(); // key -> {den, num}
-  for (const r of rows){
-    const res = normStr(r[resultK]);
-    if (!res) continue; // 분모 제외
-    const key = keyFn(r);
-    if (!m.has(key)) m.set(key, {key, den:0, num:0});
-    const o = m.get(key);
-    o.den += 1;
-    if (isAccepted(res)) o.num += 1;
-  }
-  const arr = Array.from(m.values())
-    .map(o=>({key:o.key, den:o.den, num:o.num, rate: o.den? (o.num/o.den):0}))
-    .filter(x=> normStr(x.key)!=="")
-    .sort((a,b)=> b.rate - a.rate);
-  return arr;
+function drawResultPie(data){
+  const c={합격:0,충원합격:0,불합격:0};
+  data.forEach(r=>{
+    const v=r["합격결과"];
+    if(c[v]!=null)c[v]++;
+  });
+  chart("resultPie","doughnut",
+    Object.keys(c),
+    [{data:Object.values(c),backgroundColor:["#22c55e","#38bdf8","#ef4444"]}]
+  );
 }
 
-/** =======================
- *  6) 등급대 만들기
- *  ======================= */
-function makeGradeBand(row, basis){
-  const k = pickKey(row, basis); // basis가 실제 컬럼명일 때
-  // basis가 "환산등급"이면 row에 환산등급(중복) 중 첫번째를 pickKey로 잡아줌
-  const val = toNum(row[k]);
-
-  if (val == null) return '미기재';
-  // 1.00~1.99 => 1등급대, 2.00~2.99 => 2등급대 ...
-  const band = Math.floor(val); // 3.37 -> 3
-  if (band <= 0) return '미기재';
-  if (band >= 9) return '9등급대';
-  return `${band}등급대`;
-}
-
-/** =======================
- *  7) KPI
- *  ======================= */
-function setKPIs(rows){
-  if (!rows.length){
-    elKpiCount.textContent = '0';
-    elKpiAcc.textContent = '-';
-    elKpiReg.textContent = '-';
-    elKpiGrade.textContent = '-';
-    return;
-  }
-  const sample = rows[0];
-  const resultK = pickKey(sample, COL.result);
-  const regK = pickKey(sample, COL.registered);
-  const gradeBasis = elGradeBandBy.value;
-  const gradeK = pickKey(sample, gradeBasis); // 환산등급/전교과/국영수...
-  elKpiGradeLabel.textContent = gradeBasis;
-
-  elKpiCount.textContent = rows.length.toLocaleString('ko-KR');
-
-  const valid = rows.filter(r=> normStr(r[resultK]) !== "");
-  const den = valid.length;
-  const num = valid.filter(r=> isAccepted(r[resultK])).length;
-  elKpiAcc.textContent = den ? ((num/den)*100).toFixed(1) + '%' : '-';
-
-  const regDen = valid.length;
-  const regNum = valid.filter(r=> normStr(r[regK]).toUpperCase() === 'Y').length;
-  elKpiReg.textContent = regDen ? ((regNum/regDen)*100).toFixed(1) + '%' : '-';
-
-  // 평균 등급(미기재 제외)
-  const grades = rows.map(r=> toNum(r[gradeK])).filter(n=> n!=null);
-  if (grades.length){
-    const avg = grades.reduce((a,b)=>a+b,0)/grades.length;
-    elKpiGrade.textContent = avg.toFixed(2);
-  }else{
-    elKpiGrade.textContent = '-';
-  }
-}
-
-/** =======================
- *  8) 차트
- *  ======================= */
-function destroyCharts(){
-  for (const c of Object.values(charts)){
-    try{ c.destroy(); }catch{}
-  }
-  charts = {};
-}
-function initCharts(){
-  destroyCharts();
-  charts.region = makeBarChart('chartRegion', (idx)=> onBarClick('region', idx));
-  charts.adType = makeBarChart('chartAdType', (idx)=> onBarClick('adType', idx));
-  charts.gradeBand = makeBarChart('chartGradeBand', (idx)=> onBarClick('gradeBand', idx));
-  charts.univ = makeBarChart('chartUniv', (idx)=> onBarClick('univ', idx));
-}
-
-function makeBarChart(canvasId, onClickIndex){
-  const ctx = document.getElementById(canvasId);
-  return new Chart(ctx, {
-    type:'bar',
-    data:{labels:[], datasets:[{label:'합격률(%)', data:[]}]},
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          callbacks:{
-            label: (ctx)=>{
-              const v = ctx.raw;
-              return `합격률: ${v.toFixed(1)}%`;
-            }
-          }
-        }
-      },
-      scales:{
-        y:{beginAtZero:true, max:100, ticks:{callback:(v)=> v+'%'}}
-      },
-      onClick:(evt, elements)=>{
-        if (!elements?.length) return;
-        const idx = elements[0].index;
-        onClickIndex(idx);
-      }
+function drawRegionLine(data){
+  const m={};
+  data.forEach(r=>{
+    if(!m[r["지역"]])m[r["지역"]]={p:0,t:0};
+    if(r["합격결과"]){
+      m[r["지역"]].t++;
+      if(isPass(r["합격결과"]))m[r["지역"]].p++;
     }
   });
+  chart("regionLine","line",
+    Object.keys(m),
+    [{label:"합격률(%)",data:Object.values(m).map(v=>(v.p/v.t*100).toFixed(1)),
+      borderColor:"#38bdf8",fill:true}]
+  );
 }
 
-function onBarClick(type, index){
-  // 현재 뷰(viewRows) 기준으로 다시 집계해서 해당 라벨을 얻는다
-  const data = buildChartData(type, viewRows);
-  const label = data.labels[index];
-  if (!label) return;
-
-  chartFilter = {type, value: label};
-  elActiveChip.textContent = `차트 선택: ${type} = ${label}`;
-  refresh(); // chart filter 적용
-}
-
-function buildChartData(type, rows){
-  if (!rows.length) return {labels:[], values:[]};
-  const sample = rows[0];
-  const regionK = pickKey(sample, COL.region);
-  const adTypeK = pickKey(sample, COL.adType);
-  const univK = pickKey(sample, COL.univ);
-
-  let grouped = [];
-  if (type === 'region'){
-    grouped = groupAccRate(rows, r=> normStr(r[regionK]));
-  }else if (type === 'adType'){
-    grouped = groupAccRate(rows, r=> normStr(r[adTypeK]));
-  }else if (type === 'univ'){
-    grouped = groupAccRate(rows, r=> normStr(r[univK])).slice(0, 15);
-  }else if (type === 'gradeBand'){
-    grouped = groupAccRate(rows, r=> makeGradeBand(r, elGradeBandBy.value))
-      .sort((a,b)=>{
-        // 미기재는 마지막
-        const aa = a.key === '미기재' ? 999 : parseInt(a.key,10);
-        const bb = b.key === '미기재' ? 999 : parseInt(b.key,10);
-        return aa - bb;
-      });
-  }
-
-  return {
-    labels: grouped.map(x=>x.key),
-    values: grouped.map(x=> +(x.rate*100).toFixed(1))
-  };
-}
-
-function setChart(chart, labels, values){
-  chart.data.labels = labels;
-  chart.data.datasets[0].data = values;
-  chart.update();
-}
-
-/** =======================
- *  9) 표 렌더
- *  ======================= */
-function pillForResult(res){
-  const r = normStr(res);
-  if (r === '합격') return `<span class="pill ok">합격</span>`;
-  if (r === '충원합격') return `<span class="pill warn">충원합격</span>`;
-  if (r === '불합격') return `<span class="pill bad">불합격</span>`;
-  if (!r) return `<span class="pill">미기재</span>`;
-  return `<span class="pill">${escapeHtml(r)}</span>`;
-}
-function escapeHtml(s){
-  return normStr(s)
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#039;");
-}
-
-function renderTable(rows){
-  elTbody.innerHTML = '';
-  if (!rows.length) return;
-
-  const sample = rows[0];
-  const yearK = pickKey(sample, COL.year);
-  const schoolK = pickKey(sample, COL.school);
-  const regionK = pickKey(sample, COL.region);
-  const univK = pickKey(sample, COL.univ);
-  const roundK = pickKey(sample, COL.round);
-  const adTypeK = pickKey(sample, COL.adType);
-  const adNameK = pickKey(sample, COL.adName);
-  const subTypeK = pickKey(sample, COL.subType);
-  const majorK = pickKey(sample, COL.major);
-  const minReqK = pickKey(sample, COL.minReq);
-  const gradeK = pickKey(sample, elGradeBandBy.value);
-  const scoreK = pickKey(sample, COL.convScore);
-  const resultK = pickKey(sample, COL.result);
-  const failK = pickKey(sample, COL.failReason);
-  const waitK = pickKey(sample, COL.waitNo);
-  const regK = pickKey(sample, COL.registered);
-
-  // 너무 많으면 상위 500건만 표시 (브라우저 부담 방지)
-  const limited = rows.slice(0, 500);
-
-  for (const r of limited){
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${escapeHtml(r[yearK])}</td>
-      <td>${escapeHtml(r[schoolK])}</td>
-      <td>${escapeHtml(r[regionK])}</td>
-      <td>${escapeHtml(r[univK])}</td>
-      <td>${escapeHtml(r[roundK])}</td>
-      <td>${escapeHtml(r[adTypeK])}</td>
-      <td>${escapeHtml(r[adNameK])}</td>
-      <td>${escapeHtml(r[subTypeK])}</td>
-      <td>${escapeHtml(r[majorK])}</td>
-      <td>${escapeHtml(r[minReqK])}</td>
-      <td>${escapeHtml(r[gradeK])}</td>
-      <td>${escapeHtml(r[scoreK])}</td>
-      <td>${pillForResult(r[resultK])}</td>
-      <td>${escapeHtml(r[failK])}</td>
-      <td>${escapeHtml(r[waitK])}</td>
-      <td>${escapeHtml(r[regK])}</td>
-    `;
-    elTbody.appendChild(tr);
-  }
-}
-
-/** =======================
- *  10) 전체 리프레시
- *  ======================= */
-function refresh(){
-  if (!rawRows.length){
-    setKPIs([]);
-    setChart(charts.region, [], []);
-    setChart(charts.adType, [], []);
-    setChart(charts.gradeBand, [], []);
-    setChart(charts.univ, [], []);
-    renderTable([]);
-    return;
-  }
-
-  // 1) 기본 필터
-  viewRows = applyBaseFilters(rawRows);
-
-  // 2) KPI는 "차트 필터 전" 기준으로 보는 게 보통 직관적이라 viewRows 기준
-  setKPIs(viewRows);
-
-  // 3) 차트 데이터(차트 필터 전 viewRows 기준)
-  const dRegion = buildChartData('region', viewRows);
-  const dAdType = buildChartData('adType', viewRows);
-  const dGradeBand = buildChartData('gradeBand', viewRows);
-  const dUniv = buildChartData('univ', viewRows);
-
-  setChart(charts.region, dRegion.labels, dRegion.values);
-  setChart(charts.adType, dAdType.labels, dAdType.values);
-  setChart(charts.gradeBand, dGradeBand.labels, dGradeBand.values);
-  setChart(charts.univ, dUniv.labels, dUniv.values);
-
-  // 4) 차트 클릭 필터를 적용한 사례 목록
-  const tableRows = applyChartFilter(viewRows);
-  renderTable(tableRows);
-}
-
-/** =======================
- *  11) 초기화 / 경고
- *  ======================= */
-function resetAll(){
-  rawRows = [];
-  viewRows = [];
-  chartFilter = null;
-  elFile.value = '';
-
-  // 필터 초기화
-  [elYear, elSchool, elRegion, elUnivType, elRound, elAdType].forEach(s=>{
-    s.innerHTML = `<option value="">${s.options?.[0]?.textContent || '전체'}</option>`;
-    s.value = '';
+function drawRegionUnivTop(data){
+  if(!$("region").value){$("regionUnivTop").replaceWith($("regionUnivTop").cloneNode());return;}
+  const m={};
+  data.forEach(r=>{
+    if(!m[r["대학명"]])m[r["대학명"]]={p:0,t:0};
+    if(r["합격결과"]){
+      m[r["대학명"]].t++;
+      if(isPass(r["합격결과"]))m[r["대학명"]].p++;
+    }
   });
-  elSearch.value = '';
-  elGradeBandBy.value = '환산등급';
-
-  elActiveChip.textContent = '차트 선택 없음';
-  showWarn('');
-
-  initCharts();
-  refresh();
+  const arr=Object.entries(m).map(([k,v])=>[k,(v.p/v.t*100)||0])
+    .sort((a,b)=>b[1]-a[1]).slice(0,10);
+  chart("regionUnivTop","bar",
+    arr.map(a=>a[0]),
+    [{data:arr.map(a=>a[1]),backgroundColor:"#22c55e"}]
+  );
 }
 
-function showWarn(msg){
-  if (!msg){
-    elWarn.style.display = 'none';
-    elWarn.textContent = '';
-    return;
-  }
-  elWarn.style.display = 'block';
-  elWarn.textContent = msg;
+function drawFailReason(data){
+  const m={};
+  data.forEach(r=>{
+    if(r["불합격사유"])m[r["불합격사유"]]=(m[r["불합격사유"]]||0)+1;
+  });
+  chart("failReasonChart","bar",
+    Object.keys(m),
+    [{data:Object.values(m),backgroundColor:"#f59e0b"}]
+  );
 }
 
-/** =======================
- *  12) CSV Export
- *  ======================= */
-function exportCSV(){
-  if (!rawRows.length) return;
-
-  const rows = applyChartFilter(viewRows);
-  if (!rows.length) return;
-
-  // CSV는 표에 보이는 컬럼 위주로 저장
-  const sample = rows[0];
-  const yearK = pickKey(sample, COL.year);
-  const schoolK = pickKey(sample, COL.school);
-  const regionK = pickKey(sample, COL.region);
-  const univK = pickKey(sample, COL.univ);
-  const roundK = pickKey(sample, COL.round);
-  const adTypeK = pickKey(sample, COL.adType);
-  const adNameK = pickKey(sample, COL.adName);
-  const subTypeK = pickKey(sample, COL.subType);
-  const majorK = pickKey(sample, COL.major);
-  const minReqK = pickKey(sample, COL.minReq);
-  const gradeK = pickKey(sample, elGradeBandBy.value);
-  const scoreK = pickKey(sample, COL.convScore);
-  const resultK = pickKey(sample, COL.result);
-  const failK = pickKey(sample, COL.failReason);
-  const waitK = pickKey(sample, COL.waitNo);
-  const regK = pickKey(sample, COL.registered);
-
-  const header = ["학년도","고교명","지역","대학명","모집시기","전형유형","전형","세부유형","모집단위","최저학력기준","등급","환산점수","합격결과","불합격사유","후보순위","등록여부"];
-  const lines = [header.join(",")];
-
-  const limited = rows.slice(0, 5000); // export 상한
-  for (const r of limited){
-    const vals = [
-      r[yearK], r[schoolK], r[regionK], r[univK], r[roundK],
-      r[adTypeK], r[adNameK], r[subTypeK], r[majorK], r[minReqK],
-      r[gradeK], r[scoreK], r[resultK], r[failK], r[waitK], r[regK]
-    ].map(v=>{
-      const s = normStr(v).replaceAll('"','""');
-      return `"${s}"`;
-    });
-    lines.push(vals.join(","));
-  }
-
-  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = "cases_export.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(a.href);
+function drawWait(data){
+  const m={};
+  data.forEach(r=>{
+    if(r["후보순위"])m[r["후보순위"]]=(m[r["후보순위"]]||0)+1;
+  });
+  chart("waitChart","line",
+    Object.keys(m),
+    [{data:Object.values(m),borderColor:"#a855f7"}]
+  );
 }
 
-// 시작 시 차트만 준비
-initCharts();
-refresh();
+function drawGradeDist(data){
+  const base=$("gradeBase").value;
+  const arr=data.filter(r=>isPass(r["합격결과"]))
+    .map(r=>+r[base]).filter(v=>v);
+  arr.sort((a,b)=>a-b);
+  chart("gradeDist","line",
+    arr.map((_,i)=>i+1),
+    [{data:arr,borderColor:"#22c55e",fill:true}]
+  );
+}
+
+function chart(id,type,labels,datasets){
+  const c=$(id);
+  if(c._chart)c._chart.destroy();
+  c._chart=new Chart(c,{type,data:{labels,datasets},
+    options:{responsive:true,plugins:{legend:{display:type!=="line"}}}});
+}
 </script>
 </body>
 </html>
