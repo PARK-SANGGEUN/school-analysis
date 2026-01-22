@@ -1,251 +1,3 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>학교 자체 입시 데이터 분석 대시보드</title>
-
-<!-- 라이브러리 -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-
-<style>
-body{
-  margin:0;
-  font-family:"Noto Sans KR", system-ui;
-  background:#f8fafc;
-  color:#1e293b;
-}
-header{
-  background:#2563eb;
-  color:#fff;
-  padding:18px 22px;
-}
-header h1{margin:0;font-size:24px;font-weight:800}
-header p{margin:6px 0 0;font-size:14px;opacity:.9}
-
-.container{max-width:1600px;margin:auto;padding:16px}
-
-.card{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  padding:14px;
-  margin-bottom:14px;
-  box-shadow:0 2px 6px rgba(0,0,0,.04);
-}
-.card h2{margin:0 0 10px;font-size:16px}
-
-.controls{
-  display:flex;gap:10px;flex-wrap:wrap;align-items:center
-}
-button,label{
-  background:#2563eb;color:#fff;
-  border:none;border-radius:8px;
-  padding:8px 14px;font-weight:600;cursor:pointer
-}
-input[type=file]{display:none}
-select{
-  padding:6px 10px;border-radius:6px;
-  border:1px solid #cbd5f5;
-}
-
-.kpi-grid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px
-}
-.kpi{
-  font-size:26px;font-weight:800
-}
-.kpi-label{font-size:13px;color:#64748b}
-
-.chart-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px
-}
-
-.table-wrap{
-  max-height:380px;
-  overflow:auto;
-  border:1px solid #e5e7eb;
-  border-radius:10px
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:13px
-}
-th,td{
-  padding:8px;
-  border-bottom:1px solid #e5e7eb;
-  white-space:nowrap
-}
-th{
-  background:#f1f5f9;
-  position:sticky;top:0
-}
-.tRight{text-align:right}
-.tCenter{text-align:center}
-
-@media(max-width:1100px){
-  .kpi-grid{grid-template-columns:1fr 1fr}
-  .chart-grid{grid-template-columns:1fr}
-}
-@media(max-width:600px){
-  .kpi-grid{grid-template-columns:1fr}
-}
-
-canvas{height:320px!important}
-.status{font-size:13px;color:#475569}
-</style>
-</head>
-
-<body>
-<header>
-  <h1>학교 자체 입시 데이터 분석 대시보드</h1>
-  <p>엑셀 업로드 → 즉시 분석 (합격률 = 합격 + 충원합격)</p>
-</header>
-
-<div class="container">
-<div class="card">
-  <div class="controls">
-    <label for="fileInput">엑셀 업로드</label>
-    <input id="fileInput" type="file" accept=".xlsx,.xls">
-
-    <select id="fSchool"><option value="">고교명(전체)</option></select>
-    <select id="fRegion"><option value="">지역(전체)</option></select>
-    <select id="fUniv"><option value="">대학명(전체)</option></select>
-    <select id="fAdType"><option value="">전형유형(전체)</option></select>
-
-    <select id="fGradeType">
-      <option value="">등급 기준 선택</option>
-      <option value="환산등급">환산등급</option>
-      <option value="국영수">국영수</option>
-      <option value="국영수사">국영수사</option>
-      <option value="국영수과">국영수과</option>
-    </select>
-    <select id="fGradeBand">
-      <option value="">등급대</option>
-      <option value="1">1등급대</option>
-      <option value="2">2등급대</option>
-      <option value="3">3등급대</option>
-      <option value="4">4등급대</option>
-      <option value="5">5등급대</option>
-      <option value="6">6등급대</option>
-    </select>
-
-    <span class="status" id="statusText">대기(엑셀 업로드 필요)</span>
-  </div>
-</div>
-
-<div class="kpi-grid">
-  <div class="card"><div class="kpi" id="kpiTotal">0</div><div class="kpi-label">분석 건수</div></div>
-  <div class="card"><div class="kpi" id="kpiRate">-</div><div class="kpi-label">합격률 %</div></div>
-  <div class="card"><div class="kpi" id="kpiPass">0</div><div class="kpi-label">합격+충원</div></div>
-  <div class="card"><div class="kpi" id="kpiFail">0</div><div class="kpi-label">불합격</div></div>
-</div>
-
-<div class="chart-grid">
-  <div class="card"><h2>지역별 합격률</h2><canvas id="regionChart"></canvas></div>
-  <div class="card"><h2>전형유형별 합격률</h2><canvas id="adTypeChart"></canvas></div>
-</div>
-
-<div class="card">
-  <h2>대학명별 합격률 TOP10</h2>
-  <canvas id="univTopChart"></canvas>
-</div>
-
-<div class="card">
-  <h2>사례 테이블 (차트 클릭 시 자동 필터)</h2>
-  <div class="table-wrap">
-    <table id="caseTable">
-      <thead>
-        <tr>
-          <th>고교명</th>
-          <th>지역</th>
-          <th>대학명</th>
-          <th>전형유형</th>
-          <th>세부유형</th>
-          <th>모집단위</th>
-          <th>환산등급</th>
-          <th>국영수</th>
-          <th>국영수사</th>
-          <th>국영수과</th>
-          <th>합격결과</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-<script>
-Chart.register(ChartDataLabels);
-
-let RAW=[], VIEW=[];
-let charts={}, activeFilter={};
-
-// ===== 유틸 =====
-const el=id=>document.getElementById(id);
-const val=id=>el(id)?.value||'';
-function setStatus(t){ el('statusText').textContent=t; }
-function num(v){ const n=Number(v); return isNaN(n)?null:n; }
-
-// ===== 엑셀 정규화 =====
-function normalizeRow(r){
-  return {
-    school:r['고교명']||'',
-    region:r['지역']||'',
-    univ:r['대학명']||'',
-    adType:r['전형유형']||r['전형']||'',
-    adDetail:r['세부유형']||'',
-    major:r['모집단위']||'',
-    result:r['합격결과']||'',
-    grade:num(r['환산등급']),
-    g_kym:num(r['국영수']),
-    g_kysa:num(r['국영수사']),
-    g_kygw:num(r['국영수과'])
-  };
-}
-
-function isPass(r){
-  return r.result==='합격'||r.result==='충원합격';
-}
-
-// ===== 업로드 =====
-el('fileInput').addEventListener('change',e=>{
-  const f=e.target.files[0];
-  if(!f) return;
-  setStatus('엑셀 분석 중...');
-  const rd=new FileReader();
-  rd.onload=ev=>{
-    const wb=XLSX.read(ev.target.result,{type:'binary'});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    RAW=XLSX.utils.sheet_to_json(ws,{defval:''}).map(normalizeRow);
-    initFilters();
-    applyAll();
-    setStatus(`분석 완료 (${RAW.length}행)`);
-  };
-  rd.readAsBinaryString(f);
-});
-
-// ===== 필터 초기화 =====
-function uniq(a){return [...new Set(a.filter(Boolean))];}
-function fill(id,arr){
-  const s=el(id); s.innerHTML='<option value="">전체</option>';
-  arr.forEach(v=>s.innerHTML+=`<option>${v}</option>`);
-}
-function initFilters(){
-  fill('fSchool',uniq(RAW.map(r=>r.school)));
-  fill('fRegion',uniq(RAW.map(r=>r.region)));
-  fill('fUniv',uniq(RAW.map(r=>r.univ)));
-  fill('fAdType',uniq(RAW.map(r=>r.adType)));
-}
-
-['fSchool','fRegion','fUniv','fAdType','fGradeType','fGradeBand']
-.forEach(id=>el(id).addEventListener('change',()=>{activeFilter={};applyAll();}));
 function applyAll(){
   VIEW=RAW.filter(r=>{
     if(val('fSchool')&&r.school!==val('fSchool')) return false;
@@ -372,3 +124,524 @@ setStatus('대기(엑셀 업로드 필요)');
 
 </body>
 </html>
+<script>
+Chart.register(ChartDataLabels);
+
+const DEFAULT_SCHOOL = '춘천고등학교';
+
+// Q,S,U 열 강제 인덱스 (0-based)
+const COL_Q = XLSX.utils.decode_col('Q'); // 16
+const COL_S = XLSX.utils.decode_col('S'); // 18
+const COL_U = XLSX.utils.decode_col('U'); // 20
+
+// 성능: 원본/정규화/필터결과 캐시
+let RAW = [];       // normalized rows
+let VIEW = [];      // filtered rows
+let VIEW2 = [];     // filtered + search
+let charts = {};
+let activeFilter = null;
+
+let paging = { page: 1, size: 50 };
+
+const el = (id)=>document.getElementById(id);
+const uniq = (arr)=>[...new Set(arr.filter(v=>v!=='' && v!=null))];
+const safe = (v)=> (v==null ? '' : String(v));
+const num = (v)=> {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+function setStatus(msg){
+  el('statusText').textContent = msg;
+}
+
+function showChip(text){
+  const chip = el('activeChip');
+  chip.style.display = 'inline-flex';
+  chip.firstChild.textContent = '';
+  chip.childNodes[0].textContent = text; // 첫 텍스트 노드
+}
+
+function hideChip(){
+  el('activeChip').style.display='none';
+  activeFilter = null;
+}
+
+el('clearChipBtn').addEventListener('click', ()=>{
+  hideChip();
+  applyAll();
+});
+
+// ====== 업로드 ======
+el('fileInput').addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  setStatus('엑셀 읽는 중...');
+  const fr = new FileReader();
+  fr.onload = (ev)=>{
+    try{
+      const wb = XLSX.read(ev.target.result, {type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+
+      // header:1 => 2D array (열 인덱스로 접근 가능)
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if(rows.length < 2){
+        setStatus('데이터가 없습니다(헤더/행 확인 필요).');
+        return;
+      }
+
+      const header = rows[0].map(h=>safe(h).trim());
+      const idx = indexMap(header);
+
+      RAW = rows.slice(1).map((r)=>normalizeRowFromArray(r, idx, header));
+
+      initFilters();
+      // 초기 학교 고정: 춘천고등학교가 있으면 선택
+      const schSel = el('fSchool');
+      if([...schSel.options].some(o=>o.value===DEFAULT_SCHOOL)){
+        schSel.value = DEFAULT_SCHOOL;
+      }
+      paging.page = 1;
+      applyAll();
+
+      setStatus(`분석 완료 (${RAW.length}행)`);
+    }catch(err){
+      console.error(err);
+      setStatus('엑셀 분석 실패(파일/시트 확인 필요).');
+    }
+  };
+  fr.readAsBinaryString(f);
+});
+
+// ====== 헤더 인덱스맵 (중복 헤더 대비: 첫 번째만 사용) ======
+function indexMap(header){
+  const m = {};
+  header.forEach((h,i)=>{
+    const k = h;
+    if(!k) return;
+    if(m[k] == null) m[k] = i;
+  });
+  return m;
+}
+
+// ====== 정규화: 열 이름 + (Q/S/U 강제) ======
+function normalizeRowFromArray(row, idx, header){
+  // 헤더 기반 필드(가능하면)
+  const getByName = (name)=> {
+    const i = idx[name];
+    return i==null ? '' : row[i];
+  };
+
+  // Q/S/U 강제
+  const scoreQ = row[COL_Q];
+  const gradeS = row[COL_S];
+  const resultU = row[COL_U];
+
+  const school = safe(getByName('고교명') || row[0]).trim();
+  const region = safe(getByName('지역')).trim();
+  const univ   = safe(getByName('대학명')).trim();
+  const adType = safe(getByName('전형유형') || getByName('전형')).trim();
+  const detail = safe(getByName('세부유형')).trim();
+  const major  = safe(getByName('모집단위')).trim();
+
+  const failReason = safe(getByName('불합격사유')).trim();
+  const waitRank   = safe(getByName('후보순위')).trim();
+
+  // 등급들(열 이름 그대로)
+  const g_kym  = num(getByName('국영수'));
+  const g_kysa = num(getByName('국영수사'));
+  const g_kygw = num(getByName('국영수과'));
+
+  return {
+    // 핵심 필드
+    school, region, univ, adType, detail, major,
+
+    // Q/S/U 강제 필드
+    score: num(scoreQ),
+    grade: num(gradeS),
+    result: safe(resultU).trim(),
+
+    // 추가
+    failReason,
+    waitRank,
+
+    // 등급 옵션
+    g_kym, g_kysa, g_kygw,
+
+    // 원본(테이블 표시용)
+    _raw: row
+  };
+}
+
+// ====== 필터 초기화 ======
+function fillSelect(id, arr){
+  const s = el(id);
+  const cur = s.value;
+  s.innerHTML = '<option value="">전체</option>';
+  arr.forEach(v=>{
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    s.appendChild(o);
+  });
+  // 가능하면 이전 선택 유지
+  if([...s.options].some(o=>o.value===cur)) s.value = cur;
+}
+
+function initFilters(){
+  fillSelect('fSchool', uniq(RAW.map(r=>r.school)));
+  fillSelect('fRegion', uniq(RAW.map(r=>r.region)));
+  fillSelect('fUniv',   uniq(RAW.map(r=>r.univ)));
+  fillSelect('fAdType', uniq(RAW.map(r=>r.adType)));
+}
+
+// 필터 변경 시
+['fSchool','fRegion','fUniv','fAdType','fGradeType','fGradeBand'].forEach(id=>{
+  el(id).addEventListener('change', ()=>{
+    activeFilter = null;
+    el('activeChip').style.display='none';
+    paging.page = 1;
+    applyAll();
+  });
+});
+
+// 검색/페이지
+el('qSearch').addEventListener('input', ()=>{
+  paging.page = 1;
+  applyAll();
+});
+el('pageSize').addEventListener('change', ()=>{
+  paging.size = Number(el('pageSize').value);
+  paging.page = 1;
+  applyAll();
+});
+el('prevBtn').addEventListener('click', ()=>{
+  if(paging.page>1){ paging.page--; renderTable(); }
+});
+el('nextBtn').addEventListener('click', ()=>{
+  const maxPage = Math.max(1, Math.ceil(VIEW2.length / paging.size));
+  if(paging.page < maxPage){ paging.page++; renderTable(); }
+});
+
+// ====== 필터 적용(성능: 한번만 순회) ======
+function getGradeByType(r){
+  const t = el('fGradeType').value;
+  if(t==='환산등급') return r.grade;
+  if(t==='국영수') return r.g_kym;
+  if(t==='국영수사') return r.g_kysa;
+  if(t==='국영수과') return r.g_kygw;
+  return null;
+}
+
+function applyAll(){
+  const sch = el('fSchool').value;
+  const reg = el('fRegion').value;
+  const unv = el('fUniv').value;
+  const adt = el('fAdType').value;
+  const gt  = el('fGradeType').value;
+  const gb  = el('fGradeBand').value;
+  const q   = el('qSearch').value.trim().toLowerCase();
+
+  VIEW = [];
+  for(const r of RAW){
+    if(sch && r.school!==sch) continue;
+    if(reg && r.region!==reg) continue;
+    if(unv && r.univ!==unv) continue;
+    if(adt && r.adType!==adt) continue;
+
+    if(gt && gb){
+      const g = getGradeByType(r);
+      if(g==null) continue;
+      if(Math.floor(g) !== Number(gb)) continue;
+    }
+
+    if(activeFilter){
+      if(activeFilter.type==='region' && r.region!==activeFilter.value) continue;
+      if(activeFilter.type==='adType' && r.adType!==activeFilter.value) continue;
+      if(activeFilter.type==='univ' && r.univ!==activeFilter.value) continue;
+      if(activeFilter.type==='gradeBand'){
+        const g = getGradeByType(r);
+        if(g==null) continue;
+        if((Math.floor(g)+'') !== activeFilter.value) continue;
+      }
+      if(activeFilter.type==='failReason' && r.failReason!==activeFilter.value) continue;
+    }
+
+    VIEW.push(r);
+  }
+
+  if(!q){
+    VIEW2 = VIEW;
+  }else{
+    // 검색(가벼운 필드만)
+    VIEW2 = VIEW.filter(r=>{
+      const blob = `${r.univ} ${r.major} ${r.adType} ${r.detail} ${r.region} ${r.result}`.toLowerCase();
+      return blob.includes(q);
+    });
+  }
+
+  updateKPI();
+  drawAllCharts();
+  renderTable();
+}
+
+function updateKPI(){
+  el('kpiRows').textContent = VIEW2.length;
+
+  let judged=0, pass=0, wait=0, fail=0;
+  for(const r of VIEW2){
+    if(!r.result) continue;
+    judged++;
+    if(r.result==='합격') pass++;
+    else if(r.result==='충원합격') wait++;
+    else if(r.result==='불합격') fail++;
+  }
+  el('kpiJudged').textContent = judged;
+  el('kpiPass').textContent = pass;
+  el('kpiWait').textContent = wait;
+  el('kpiFail').textContent = fail;
+  el('kpiRate').textContent = judged ? (((pass+wait)/judged)*100).toFixed(1)+'%' : '-';
+}
+
+// ===== 테이블 헤더(원하는 컬럼 위주) =====
+const TABLE_COLS = [
+  {k:'school', t:'고교명'},
+  {k:'region', t:'지역'},
+  {k:'univ', t:'대학명'},
+  {k:'adType', t:'전형유형'},
+  {k:'detail', t:'세부유형'},
+  {k:'major', t:'모집단위'},
+  {k:'score', t:'환산점수(Q)'},
+  {k:'grade', t:'환산등급(S)'},
+  {k:'g_kym', t:'국영수'},
+  {k:'g_kysa', t:'국영수사'},
+  {k:'g_kygw', t:'국영수과'},
+  {k:'result', t:'합격결과(U)'},
+  {k:'failReason', t:'불합격사유'},
+  {k:'waitRank', t:'후보순위'}
+];
+
+(function initTableHeader(){
+  const tr = el('theadRow');
+  tr.innerHTML='';
+  TABLE_COLS.forEach(c=>{
+    const th=document.createElement('th');
+    th.textContent=c.t;
+    tr.appendChild(th);
+  });
+})();
+/* ===============================
+   PART 4-1 : 성능 최적화 & 유틸
+================================ */
+
+// 렌더링 최적화용 requestAnimationFrame
+function raf(fn){
+  window.requestAnimationFrame
+    ? requestAnimationFrame(fn)
+    : setTimeout(fn,0);
+}
+
+// 차트 안전 제거
+function safeDestroy(k){
+  if(charts[k]){
+    charts[k].destroy();
+    charts[k]=null;
+  }
+}
+
+// 합격 판정 (U열)
+function isPass(r){
+  return r.result === '합격' || r.result === '충원합격';
+}
+
+// 초기 학교 고정 (춘천고등학교)
+function applyDefaultSchool(){
+  const s = document.getElementById('fSchool');
+  if(!s) return;
+  const opt = [...s.options].find(o=>o.value.includes('춘천'));
+  if(opt){
+    s.value = opt.value;
+  }
+}
+/* ===============================
+   PART 4-2 : 필터 적용 (렉 방지)
+================================ */
+
+function applyAll(){
+  raf(()=>{
+    VIEW = RAW.filter(r=>{
+      if(val('fSchool') && r.school !== val('fSchool')) return false;
+      if(val('fRegion') && r.region !== val('fRegion')) return false;
+      if(val('fUniv') && r.univ !== val('fUniv')) return false;
+      if(val('fAdType') && r.adType !== val('fAdType')) return false;
+
+      // 등급 필터 (S열 환산등급)
+      if(val('fGradeType') && val('fGradeBand')){
+        let g = null;
+        if(val('fGradeType')==='환산등급') g = r.grade;       // S열
+        if(val('fGradeType')==='국영수') g = r.g_kym;
+        if(val('fGradeType')==='국영수사') g = r.g_kysa;
+        if(val('fGradeType')==='국영수과') g = r.g_kygw;
+
+        if(g==null) return false;
+        if(Math.floor(g) !== Number(val('fGradeBand'))) return false;
+      }
+
+      // 차트 클릭 필터
+      if(activeFilter.type){
+        if(activeFilter.type==='region' && r.region!==activeFilter.value) return false;
+        if(activeFilter.type==='adType' && r.adType!==activeFilter.value) return false;
+        if(activeFilter.type==='univ' && r.univ!==activeFilter.value) return false;
+      }
+      return true;
+    });
+
+    updateKPI();
+    drawCharts();
+    drawTable();
+  });
+}
+/* ===============================
+   PART 4-3 : 집계 & 차트
+================================ */
+
+function groupBy(key){
+  const m={};
+  for(const r of VIEW){
+    const k=r[key];
+    if(!k) continue;
+    if(!m[k]) m[k]={p:0,w:0,f:0,t:0};
+
+    if(r.result){
+      m[k].t++;
+      if(r.result==='합격') m[k].p++;
+      else if(r.result==='충원합격') m[k].w++;
+      else if(r.result==='불합격') m[k].f++;
+    }
+  }
+  return Object.entries(m).map(([k,v])=>({
+    label:k,
+    rate: v.t ? ((v.p+v.w)/v.t*100) : 0,
+    ...v
+  }));
+}
+
+function drawCharts(){
+  drawBarLine('regionChart', groupBy('region'), 'region');
+  drawBarLine('adTypeChart', groupBy('adType'), 'adType');
+  drawUnivTop();
+}
+
+function drawBarLine(id,data,type){
+  safeDestroy(id);
+
+  charts[id] = new Chart(el(id),{
+    data:{
+      labels:data.map(d=>d.label),
+      datasets:[
+        {
+          type:'bar',
+          label:'합격률(%)',
+          data:data.map(d=>d.rate),
+          backgroundColor:'#60a5fa'
+        },
+        {
+          type:'line',
+          label:'합격률 추세',
+          data:data.map(d=>d.rate),
+          borderColor:'#1d4ed8',
+          tension:.3,
+          pointRadius:4
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom'},
+        datalabels:{
+          anchor:'end',
+          align:'top',
+          formatter:v=>v.toFixed(1)+'%',
+          font:{weight:'bold'}
+        }
+      },
+      scales:{
+        y:{beginAtZero:true,max:100,title:{display:true,text:'합격률 %'}},
+        x:{ticks:{maxRotation:30,minRotation:0}}
+      },
+      onClick:(e,els)=>{
+        if(!els.length) return;
+        activeFilter={type,value:data[els[0].index].label};
+        applyAll();
+      }
+    }
+  });
+}
+/* ===============================
+   PART 4-4 : TOP10 & 테이블
+================================ */
+
+function drawUnivTop(){
+  safeDestroy('univ');
+
+  const data = groupBy('univ')
+    .sort((a,b)=>b.rate-a.rate)
+    .slice(0,10);
+
+  charts.univ = new Chart(el('univTopChart'),{
+    data:{
+      labels:data.map(d=>d.label),
+      datasets:[
+        {
+          type:'bar',
+          label:'대학별 합격률 TOP10',
+          data:data.map(d=>d.rate),
+          backgroundColor:'#a78bfa'
+        }
+      ]
+    },
+    options:{
+      indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          formatter:v=>v.toFixed(1)+'%',
+          anchor:'end',
+          align:'right'
+        }
+      },
+      scales:{
+        x:{beginAtZero:true,max:100}
+      },
+      onClick:(e,els)=>{
+        if(!els.length) return;
+        activeFilter={type:'univ',value:data[els[0].index].label};
+        applyAll();
+      }
+    }
+  });
+}
+
+function drawTable(){
+  const body = document.querySelector('#caseTable tbody');
+  body.innerHTML='';
+
+  const frag = document.createDocumentFragment();
+  VIEW.slice(0,300).forEach(r=>{   // 🔥 렉 방지 (300행 제한)
+    const tr=document.createElement('tr');
+    [
+      r.school,r.region,r.univ,r.adType,r.adDetail,r.major,
+      r.score,r.grade,r.result
+    ].forEach(v=>{
+      const td=document.createElement('td');
+      td.textContent=v??'';
+      tr.appendChild(td);
+    });
+    frag.appendChild(tr);
+  });
+  body.appendChild(frag);
+}
+
+// 최초 상태
+setStatus('대기(엑셀 업로드 필요)');
